@@ -46,6 +46,7 @@ export interface ApiConsultationSummary {
   appointmentId: string;
   notes: string | null;
   status: "not_started" | "in_progress" | "completed";
+  videoRoomId?: string | null;
   startedAt: string | null;
   endedAt: string | null;
 }
@@ -70,6 +71,7 @@ export interface ApiConsultation {
   appointmentId: string;
   notes: string | null;
   status: "not_started" | "in_progress" | "completed";
+  videoRoomId?: string | null;
   startedAt: string | null;
   endedAt: string | null;
   appointment: ApiAppointment;

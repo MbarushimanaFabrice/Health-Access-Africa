@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { StatusBadge } from "@/components/status-badge";
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
-import { CalendarPlus, X } from "lucide-react";
+import { CalendarPlus, Video, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/patient/appointments")({
@@ -21,9 +21,13 @@ export const Route = createFileRoute("/patient/appointments")({
 
 function MyAppointments() {
   const { currentUser } = useAuth();
-  const { appointments, doctors, updateAppointmentStatus } = useAppState();
+  const { appointments, doctors, consultations, updateAppointmentStatus } = useAppState();
   const [filter, setFilter] = useState("all");
   const doctorById = useMemo(() => Object.fromEntries(doctors.map((d) => [d.id, d])), [doctors]);
+  const consultByAppt = useMemo(
+    () => Object.fromEntries(consultations.map((c) => [c.appointmentId, c])),
+    [consultations]
+  );
 
   const mine = appointments.filter((a) => a.patientId === currentUser!.id);
   const visible = filter === "all" ? mine : mine.filter((a) => a.status === filter);
@@ -73,6 +77,12 @@ function MyAppointments() {
                 ) : visible.map((a) => {
                   const d = doctorById[a.doctorId];
                   const canCancel = a.status === "Pending" || a.status === "Confirmed";
+                  const consult = consultByAppt[a.id];
+                  const callLive =
+                    Boolean(consult?.videoRoomId) &&
+                    consult?.status !== "Completed" &&
+                    a.status !== "Completed" &&
+                    a.status !== "Cancelled";
                   return (
                     <TableRow key={a.id}>
                       <TableCell>
@@ -89,7 +99,18 @@ function MyAppointments() {
                       <TableCell className="text-sm">{a.time}</TableCell>
                       <TableCell><StatusBadge status={a.status} /></TableCell>
                       <TableCell className="text-right">
-                        {canCancel && (
+                        <div className="flex items-center justify-end gap-2">
+                          {!callLive && !canCancel && (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                          {callLive && (
+                            <Button asChild size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90">
+                              <Link to="/call/$appointmentId" params={{ appointmentId: a.id }}>
+                                <Video className="size-4" /> Join Call
+                              </Link>
+                            </Button>
+                          )}
+                          {canCancel && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700"><X className="size-4" /> Cancel</Button>
@@ -107,7 +128,8 @@ function MyAppointments() {
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        )}
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

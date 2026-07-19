@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { DoctorLayout } from "@/components/doctor-layout";
 import { PageHeader } from "@/components/role-layout";
@@ -10,7 +10,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
 import { buildCountTrend } from "@/lib/adapters";
-import { CalendarDays, Users, Stethoscope, Bell, TrendingUp, Eye, Play, BellRing } from "lucide-react";
+import { CalendarDays, Users, Stethoscope, Bell, TrendingUp, Eye, Video, BellRing } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
 
@@ -36,7 +36,8 @@ function StatCard({ icon: Icon, label, value, trend }: { icon: React.ComponentTy
 
 function DoctorDashboard() {
   const { currentUser } = useAuth();
-  const { appointments, consultations, notifications, patients, startConsultation } = useAppState();
+  const { appointments, consultations, notifications, patients, startVideoCall } = useAppState();
+  const navigate = useNavigate();
   const doctor = currentUser!;
   const today = new Date().toISOString().slice(0, 10);
   const patientById = useMemo(() => Object.fromEntries(patients.map((p) => [p.id, p])), [patients]);
@@ -150,9 +151,19 @@ function DoctorDashboard() {
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Link to="/doctor/appointments" className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-white/15 py-1.5 text-xs font-medium hover:bg-white/25"><Eye className="size-3" /> View</Link>
-                      {a.status !== "Completed" && a.status !== "In Progress" && (
-                        <button onClick={() => { startConsultation(a.id); toast.success("Consultation started"); }}
-                          className="flex items-center justify-center gap-1 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-medium hover:bg-white/25"><Play className="size-3" /></button>
+                      {(a.status === "Confirmed" || a.status === "In Progress") && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await startVideoCall(a.id);
+                              navigate({ to: "/call/$appointmentId", params: { appointmentId: a.id } });
+                            } catch (e) {
+                              toast.error(e instanceof Error ? e.message : "Could not start the video call");
+                            }
+                          }}
+                          className="flex items-center justify-center gap-1 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-medium hover:bg-white/25"
+                          title="Start video call"
+                        ><Video className="size-3" /></button>
                       )}
                     </div>
                   </div>

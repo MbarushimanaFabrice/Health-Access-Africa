@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { DoctorLayout } from "@/components/doctor-layout";
 import { PageHeader } from "@/components/role-layout";
@@ -12,7 +12,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
 import { type Appointment, type AppointmentStatus } from "@/mock/data";
-import { Eye } from "lucide-react";
+import { Eye, Video } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/doctor/appointments")({
@@ -22,10 +22,15 @@ export const Route = createFileRoute("/doctor/appointments")({
 
 function DoctorAppointments() {
   const { currentUser } = useAuth();
-  const { appointments, patients, updateAppointmentStatus } = useAppState();
+  const { appointments, patients, consultations, updateAppointmentStatus, startVideoCall } = useAppState();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState("all");
   const [detail, setDetail] = useState<Appointment | null>(null);
   const patientById = useMemo(() => Object.fromEntries(patients.map((p) => [p.id, p])), [patients]);
+  const consultByAppt = useMemo(
+    () => Object.fromEntries(consultations.map((c) => [c.appointmentId, c])),
+    [consultations]
+  );
 
   const mine = appointments.filter((a) => a.doctorId === currentUser!.id);
   const visible = filter === "all" ? mine : mine.filter((a) => a.status === filter);
@@ -117,6 +122,24 @@ function DoctorAppointments() {
                     </Button>
                   ))}
                 </div>
+                {(detail.status === "Confirmed" || detail.status === "In Progress") && (
+                  <div className="pt-2">
+                    <Button
+                      className="w-full bg-brand text-brand-foreground hover:bg-brand/90"
+                      onClick={async () => {
+                        try {
+                          await startVideoCall(detail.id);
+                          navigate({ to: "/call/$appointmentId", params: { appointmentId: detail.id } });
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : "Could not start the video call");
+                        }
+                      }}
+                    >
+                      <Video className="size-4" />
+                      {consultByAppt[detail.id]?.videoRoomId ? "Join Video Call" : "Start Video Call"}
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           })()}

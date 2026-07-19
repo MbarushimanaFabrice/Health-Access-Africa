@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { prisma } from '../../config/db';
 import { CreateConsultationInput, UpdateConsultationInput } from './consultations.schema';
 
@@ -168,6 +169,103 @@ export async function getConsultationByAppointment(
 
   if (!consultation) {
     throw new Error('No consultation found for this appointment');
+  }
+
+  return consultation;
+}
+
+/**
+ * Generates an unguessable Jitsi room name. The room name is the only access
+ * control on the public meet.jit.si server, so it must not be guessable and
+ * is only ever revealed to the appointment's doctor and patient.
+ */
+function generateVideoRoomId(appointmentId: string) {
+  return `haa-${appointmentId.slice(0, 8)}-${randomBytes(8).toString('hex')}`;
+}
+
+export async function getOrCreateVideoRoom(
+  appointmentId: string,
+  userId: string,
+  role: string
+) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    include: {
+      consultation: true,
+      patient: { select: { id: true, fullName: true } },
+      doctor: { select: { id: true, fullName: true } },
+    },
+  });
+
+  if (!appointment) {
+    throw new Error('Appointment not found');
+  }
+
+  const isDoctor = role === 'doctor' && appointment.doctorId === userId;
+  const isPatient = role === 'patient' && appointment.patientId === userId;
+
+  if (!isDoctor && !isPatient) {
+    throw new Error('You are not authorized to join this call');
+  }
+
+  if (appointment.status !== 'confirmed') {
+    throw new Error('Video calls are only available for confirmed appointments');
+  }
+
+  if (appointment.consultation?.status === 'completed') {
+    throw new Error('This consultation has already been completed');
+  }
+
+  const consultationInclude = {
+    appointment: {
+      include: {
+        patient: { select: { id: true, fullName: true, email: true } },
+        doctor: { select: { id: true, fullName: true } },
+      },
+    },
+  };
+
+  // Patients can only join a call the doctor has already started
+  if (isPatient) {
+    if (!appointment.consultation?.videoRoomId) {
+      throw new Error('The doctor has not started the video call yet');
+    }
+    return prisma.consultation.findUnique({
+      where: { appointmentId },
+      include: consultationInclude,
+    });
+  }
+
+  // Doctor: get-or-create the consultation and its video room
+  const isNewRoom = !appointment.consultation?.videoRoomId;
+  const videoRoomId =
+    appointment.consultation?.videoRoomId ?? generateVideoRoomId(appointmentId);
+
+  const consultation = await prisma.consultation.upsert({
+    where: { appointmentId },
+    create: {
+      appointmentId,
+      status: 'in_progress',
+      startedAt: new Date(),
+      videoRoomId,
+    },
+    update: {
+      videoRoomId,
+      status:
+        appointment.consultation?.status === 'not_started' ? 'in_progress' : undefined,
+      startedAt: appointment.consultation?.startedAt ?? new Date(),
+    },
+    include: consultationInclude,
+  });
+
+  if (isNewRoom) {
+    await prisma.notification.create({
+      data: {
+        userId: appointment.patientId,
+        message: `Dr. ${appointment.doctor.fullName} has started your video consultation for your appointment on ${appointment.appointmentDate.toISOString().slice(0, 10)} at ${appointment.appointmentTime}. Join now from My Appointments.`,
+        type: 'video_call_started',
+      },
+    });
   }
 
   return consultation;

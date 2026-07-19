@@ -29,6 +29,7 @@ import { Route as DoctorNotificationsRouteImport } from './routes/doctor.notific
 import { Route as DoctorHealthInfoRouteImport } from './routes/doctor.health-info'
 import { Route as DoctorConsultationsRouteImport } from './routes/doctor.consultations'
 import { Route as DoctorAppointmentsRouteImport } from './routes/doctor.appointments'
+import { Route as CallAppointmentIdRouteImport } from './routes/call.$appointmentId'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -138,6 +139,11 @@ const DoctorAppointmentsRoute = DoctorAppointmentsRouteImport.update({
   path: '/doctor/appointments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CallAppointmentIdRoute = CallAppointmentIdRouteImport.update({
+  id: '/call/$appointmentId',
+  path: '/call/$appointmentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/call/$appointmentId': typeof CallAppointmentIdRoute
   '/doctor/appointments': typeof DoctorAppointmentsRoute
   '/doctor/consultations': typeof DoctorConsultationsRoute
   '/doctor/health-info': typeof DoctorHealthInfoRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/call/$appointmentId': typeof CallAppointmentIdRoute
   '/doctor/appointments': typeof DoctorAppointmentsRoute
   '/doctor/consultations': typeof DoctorConsultationsRoute
   '/doctor/health-info': typeof DoctorHealthInfoRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/call/$appointmentId': typeof CallAppointmentIdRoute
   '/doctor/appointments': typeof DoctorAppointmentsRoute
   '/doctor/consultations': typeof DoctorConsultationsRoute
   '/doctor/health-info': typeof DoctorHealthInfoRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/users'
+    | '/call/$appointmentId'
     | '/doctor/appointments'
     | '/doctor/consultations'
     | '/doctor/health-info'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/users'
+    | '/call/$appointmentId'
     | '/doctor/appointments'
     | '/doctor/consultations'
     | '/doctor/health-info'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/users'
+    | '/call/$appointmentId'
     | '/doctor/appointments'
     | '/doctor/consultations'
     | '/doctor/health-info'
@@ -377,6 +389,7 @@ export interface RootRouteChildren {
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  CallAppointmentIdRoute: typeof CallAppointmentIdRoute
   DoctorAppointmentsRoute: typeof DoctorAppointmentsRoute
   DoctorConsultationsRoute: typeof DoctorConsultationsRoute
   DoctorHealthInfoRoute: typeof DoctorHealthInfoRoute
@@ -536,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DoctorAppointmentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/call/$appointmentId': {
+      id: '/call/$appointmentId'
+      path: '/call/$appointmentId'
+      fullPath: '/call/$appointmentId'
+      preLoaderRoute: typeof CallAppointmentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
@@ -609,6 +629,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  CallAppointmentIdRoute: CallAppointmentIdRoute,
   DoctorAppointmentsRoute: DoctorAppointmentsRoute,
   DoctorConsultationsRoute: DoctorConsultationsRoute,
   DoctorHealthInfoRoute: DoctorHealthInfoRoute,

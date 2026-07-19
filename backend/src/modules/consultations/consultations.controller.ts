@@ -157,3 +157,42 @@ export async function getConsultationController(req: Request, res: Response): Pr
     errorResponse(res, (error as Error).message, 404);
   }
 }
+
+/**
+ * @swagger
+ * /api/consultations/{appointmentId}/video:
+ *   post:
+ *     tags: [Consultations]
+ *     summary: Get or create the video call room for an appointment (Patient/Doctor)
+ *     description: >
+ *       Doctors start the call - the consultation is created (or promoted to
+ *       in_progress) with an unguessable Jitsi room name and the patient is
+ *       notified. Patients can only join once the doctor has started the call.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appointmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Consultation including videoRoomId
+ *       400:
+ *         description: Call not available (not confirmed, not started yet, completed, or not authorized)
+ */
+export async function getOrCreateVideoRoomController(req: Request, res: Response): Promise<void> {
+  try {
+    const consultation = await consultationsService.getOrCreateVideoRoom(
+      req.params.appointmentId,
+      req.user!.userId,
+      req.user!.role
+    );
+    successResponse(res, consultation);
+  } catch (error) {
+    errorResponse(res, (error as Error).message, 400);
+  }
+}

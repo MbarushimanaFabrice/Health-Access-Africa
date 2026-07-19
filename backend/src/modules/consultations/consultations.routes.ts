@@ -4,6 +4,7 @@ import {
   updateConsultationController,
   getMyConsultationsController,
   getConsultationController,
+  getOrCreateVideoRoomController,
 } from './consultations.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/role.middleware';
@@ -30,6 +31,12 @@ router.patch(
 );
 
 router.get('/me', authorize('patient', 'doctor', 'admin'), getMyConsultationsController);
+
+router.post(
+  '/:appointmentId/video',
+  authorize('patient', 'doctor'),
+  getOrCreateVideoRoomController
+);
 
 router.get(
   '/:appointmentId',

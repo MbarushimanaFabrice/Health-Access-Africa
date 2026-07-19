@@ -34,3 +34,10 @@ export async function getConsultationByAppointment(appointmentId: string): Promi
   const res = await apiClient.get<ApiEnvelope<ApiConsultation>>(`/consultations/${appointmentId}`);
   return res.data.data!;
 }
+
+export async function getOrCreateVideoRoom(appointmentId: string): Promise<ApiConsultation> {
+  const res = await apiClient.post<ApiEnvelope<ApiConsultation>>(
+    `/consultations/${appointmentId}/video`
+  );
+  return res.data.data!;
+}

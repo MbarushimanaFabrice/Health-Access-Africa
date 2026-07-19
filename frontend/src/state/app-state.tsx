@@ -72,6 +72,7 @@ interface AppState {
   // consultations
   updateConsultationNotes: (id: string, notes: string) => Promise<void>;
   startConsultation: (appointmentId: string) => Promise<void>;
+  startVideoCall: (appointmentId: string) => Promise<void>;
   completeConsultation: (id: string) => Promise<void>;
   // notifications
   markNotificationRead: (id: string) => Promise<void>;
@@ -126,12 +127,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     queryKey: KEYS.consultations,
     queryFn: () => consultationsApi.getMyConsultations(),
     enabled: enabled && (role === "patient" || role === "doctor"),
+    // Poll so a patient's "Join Call" button appears shortly after the doctor
+    // starts the video call.
+    refetchInterval: 15_000,
   });
 
   const notificationsQuery = useQuery({
     queryKey: KEYS.notifications,
     queryFn: () => notificationsApi.getMyNotifications(),
     enabled,
+    // Poll so booking/confirmation/video-call notifications show up without a
+    // manual refresh.
+    refetchInterval: 15_000,
   });
 
   const articlesQuery = useQuery({
@@ -265,6 +272,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const startVideoCallMutation = useMutation({
+    mutationFn: async (appointmentId: string) =>
+      consultationsApi.getOrCreateVideoRoom(appointmentId),
+    onSuccess: () => {
+      invalidateAppointments();
+      invalidateConsultations();
+    },
+  });
+
   const completeConsultationMutation = useMutation({
     mutationFn: async (id: string) => consultationsApi.updateConsultation(id, { status: "completed" }),
     onSuccess: () => {
@@ -380,6 +396,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
     startConsultation: (appointmentId) =>
       startConsultationMutation.mutateAsync(appointmentId).then(() => undefined),
+
+    startVideoCall: (appointmentId) =>
+      startVideoCallMutation.mutateAsync(appointmentId).then(() => undefined),
 
     completeConsultation: (id) => completeConsultationMutation.mutateAsync(id).then(() => undefined),
 

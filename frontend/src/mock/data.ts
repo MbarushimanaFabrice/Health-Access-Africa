@@ -61,6 +61,7 @@ export interface Consultation {
   date: string;
   status: ConsultationStatus;
   notes: string;
+  videoRoomId?: string | null;
 }
 
 export interface Notification {

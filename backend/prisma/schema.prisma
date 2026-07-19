@@ -104,6 +104,7 @@ model Consultation {
   appointment   Appointment        @relation(fields: [appointmentId], references: [id])
   notes         String?
   status        ConsultationStatus @default(not_started)
+  videoRoomId   String?            @map("video_room_id")
   startedAt     DateTime?
   endedAt       DateTime?
   createdAt     DateTime           @default(now())

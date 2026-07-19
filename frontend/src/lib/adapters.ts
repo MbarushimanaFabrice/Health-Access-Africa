@@ -129,6 +129,7 @@ export function toConsultation(c: ApiConsultation): Consultation {
     date: c.appointment.appointmentDate.slice(0, 10),
     status: CONSULTATION_STATUS_MAP[c.status],
     notes: c.notes ?? "",
+    videoRoomId: c.videoRoomId ?? null,
   };
 }
 
@@ -137,6 +138,7 @@ const NOTIFICATION_TYPE_MAP: Record<string, NotificationType> = {
   appointment_confirmed: "Appointments",
   appointment_cancelled: "Appointments",
   appointment_completed: "Appointments",
+  video_call_started: "Appointments",
   reminder: "Reminders",
   health_info: "Health Info",
   user: "Users",
@@ -148,6 +150,7 @@ const NOTIFICATION_TITLE_MAP: Record<string, string> = {
   appointment_confirmed: "Appointment Confirmed",
   appointment_cancelled: "Appointment Cancelled",
   appointment_completed: "Appointment Completed",
+  video_call_started: "Video Call Started",
   reminder: "Reminder",
   health_info: "Health Info Update",
   user: "Account Update",
