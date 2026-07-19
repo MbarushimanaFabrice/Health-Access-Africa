@@ -1,0 +1,139 @@
+// Generator
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Datasource
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  patient
+  doctor
+  admin
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+enum ConsultationStatus {
+  not_started
+  in_progress
+  completed
+}
+
+enum HealthInfoStatus {
+  draft
+  published
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  fullName           String
+  email              String   @unique
+  passwordHash       String
+  role               Role
+  phone              String?
+  district           String?
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(false) @map("must_change_password")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  doctorProfile       DoctorProfile?
+  patientProfile      PatientProfile?
+  patientAppointments Appointment[]  @relation("PatientAppointments")
+  doctorAppointments  Appointment[]  @relation("DoctorAppointments")
+  notifications       Notification[]
+  healthInfoPosts     HealthInfo[]
+
+  @@map("users")
+}
+
+model DoctorProfile {
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty       String?
+  hospital        String?
+  bio             String?
+  yearsExperience Int?
+
+  @@map("doctor_profiles")
+}
+
+model PatientProfile {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth       DateTime?
+  gender            String?
+  allergies         String?
+  chronicConditions String?
+  notes             String?
+
+  @@map("patient_profiles")
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  patientId       String
+  doctorId        String
+  patient         User              @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctor          User              @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  appointmentDate DateTime
+  appointmentTime String
+  reason          String?
+  status          AppointmentStatus @default(pending)
+  consultation    Consultation?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("appointments")
+}
+
+model Consultation {
+  id            String             @id @default(uuid())
+  appointmentId String             @unique
+  appointment   Appointment        @relation(fields: [appointmentId], references: [id])
+  notes         String?
+  status        ConsultationStatus @default(not_started)
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@map("consultations")
+}
+
+model HealthInfo {
+  id        String            @id @default(uuid())
+  title     String
+  content   String
+  category  String?
+  status    HealthInfoStatus  @default(published)
+  authorId  String
+  author    User              @relation(fields: [authorId], references: [id])
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@map("health_info")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
