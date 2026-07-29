@@ -76,7 +76,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Health Access Africa — Telehealth for Rwanda" },
+      { title: "Health Access Africa — Telehealth for Africa" },
       { name: "description", content: "Telehealth platform connecting patients in rural Rwanda with doctors and healthcare providers." },
       { property: "og:title", content: "Health Access Africa" },
       { property: "og:description", content: "Patient, Doctor, and Admin dashboards for a Rwanda-focused telehealth platform." },

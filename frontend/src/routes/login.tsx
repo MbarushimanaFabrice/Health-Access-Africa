@@ -62,7 +62,7 @@ function LoginPage() {
           <div className="absolute inset-0 bg-green-600/40" />
           <div className="absolute inset-0 flex flex-col items-center justify-center p-10 text-center text-white">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 drop-shadow-lg">
-              Connecting Rwanda to Quality Healthcare
+              Connecting Africa to Quality Healthcare
             </h2>
             <p className="text-lg md:text-xl max-w-md drop-shadow-md">
               One platform for patients, doctors, and administrators — appointments, consultations, and health education across every district.
@@ -75,7 +75,7 @@ function LoginPage() {
           </div>
           <div>
             <div className="text-lg font-semibold">Health Access Africa</div>
-            <div className="text-xs text-sidebar-foreground/60">Telehealth for Rwanda</div>
+            <div className="text-xs text-sidebar-foreground/60">Telehealth for Africa</div>
           </div>
         </div>
         <div className="max-w-md space-y-4">
