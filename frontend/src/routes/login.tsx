@@ -55,8 +55,8 @@ function LoginPage() {
       <aside className="relative hidden bg-sidebar text-sidebar-foreground lg:flex lg:flex-col lg:justify-between p-10 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://hmedicalcentre.com/wp-content/uploads/2023/05/Doctor-Consultation-2-1000x1000.png"
-            alt="Doctor consultation"
+            src="/auth-consultation.jpeg"
+            alt="Doctor reviewing health records with a patient"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-green-600/40" />
@@ -111,7 +111,7 @@ function LoginPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@haa.rw"
+                placeholder="youremail@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
