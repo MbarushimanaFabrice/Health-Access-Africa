@@ -15,18 +15,51 @@ export async function createAppointment(patientId: string, input: CreateAppointm
     throw new Error('This doctor is not currently available');
   }
 
-  const appointment = await prisma.appointment.create({
-    data: {
-      patientId,
-      doctorId: input.doctorId,
-      appointmentDate: new Date(input.appointmentDate),
-      appointmentTime: input.appointmentTime,
-      reason: input.reason,
+  const slot = await prisma.availabilitySlot.findUnique({
+    where: {
+      doctorId_date_startTime: {
+        doctorId: input.doctorId,
+        date: new Date(`${input.appointmentDate}T00:00:00.000Z`),
+        startTime: input.appointmentTime,
+      },
     },
-    include: {
-      patient: { select: { id: true, fullName: true, email: true, district: true } },
-      doctor: { select: { id: true, fullName: true, email: true, doctorProfile: true } },
-    },
+  });
+
+  if (!slot) {
+    throw new Error('This doctor has no availability at the selected date and time');
+  }
+
+  if (slot.appointmentId) {
+    throw new Error('That slot has just been booked. Please pick another time.');
+  }
+
+  const appointment = await prisma.$transaction(async (tx) => {
+    const created = await tx.appointment.create({
+      data: {
+        patientId,
+        doctorId: input.doctorId,
+        appointmentDate: new Date(input.appointmentDate),
+        appointmentTime: input.appointmentTime,
+        reason: input.reason,
+      },
+      include: {
+        patient: { select: { id: true, fullName: true, email: true, district: true } },
+        doctor: { select: { id: true, fullName: true, email: true, doctorProfile: true } },
+      },
+    });
+
+    // Conditional update — loses the race harmlessly if another patient booked
+    // the same slot between the check above and here.
+    const { count } = await tx.availabilitySlot.updateMany({
+      where: { id: slot.id, appointmentId: null },
+      data: { appointmentId: created.id },
+    });
+
+    if (count === 0) {
+      throw new Error('That slot has just been booked. Please pick another time.');
+    }
+
+    return created;
   });
 
   // Notify patient
@@ -114,6 +147,14 @@ export async function updateAppointmentStatus(
       doctor: { select: { id: true, fullName: true } },
     },
   });
+
+  // Free the reserved slot so another patient can take it.
+  if (input.status === 'cancelled') {
+    await prisma.availabilitySlot.updateMany({
+      where: { appointmentId },
+      data: { appointmentId: null },
+    });
+  }
 
   // Send notification to the other party
   const typeMap: Record<string, string> = {

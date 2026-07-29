@@ -45,13 +45,13 @@ function ProfilePage() {
             <div className="mt-4 text-lg font-semibold">{patient.name}</div>
             <div className="text-sm text-muted-foreground">{patient.email}</div>
             <div className="mt-4 grid w-full grid-cols-2 gap-3 text-left text-sm">
-              <div><div className="text-xs text-muted-foreground">District</div><div className="font-medium">{patient.district}</div></div>
+              <div><div className="text-xs text-muted-foreground">District</div><div className="font-medium">{patient.district}</div></div><br />
               <div><div className="text-xs text-muted-foreground">Gender</div><div className="font-medium">{patient.gender}</div></div>
               <div className="col-span-2"><div className="text-xs text-muted-foreground">Date of Birth</div><div className="font-medium">{patient.dob}</div></div>
             </div>
           </CardContent>
         </Card>
-
+{/*  */}
         <div className="space-y-6 xl:col-span-2">
           <Card className="border-border/60 shadow-[var(--shadow-card)]">
             <CardHeader><CardTitle className="text-base">Personal Information</CardTitle></CardHeader>

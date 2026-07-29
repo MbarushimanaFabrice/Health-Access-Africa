@@ -176,5 +176,5 @@ export function setupSwagger(app: Express): void {
     res.send(swaggerSpec);
   });
 
-  console.log('📚 Swagger UI available at http://localhost:4000/api-docs');
+  console.log('Swagger UI available at http://localhost:4000/api-docs');
 }

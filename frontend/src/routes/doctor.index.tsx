@@ -25,7 +25,7 @@ function StatCard({ icon: Icon, label, value, trend }: { icon: React.ComponentTy
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="grid size-11 place-items-center rounded-full bg-brand-soft text-brand"><Icon className="size-5" /></div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand"><TrendingUp className="size-3" />{trend}</span>
+          {/* <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand"><TrendingUp className="size-3" />{trend}</span> */}
         </div>
         <div className="mt-4 text-3xl font-bold tracking-tight">{value}</div>
         <div className="mt-1 text-sm text-muted-foreground">{label}</div>
@@ -50,6 +50,10 @@ function DoctorDashboard() {
 
   const todayFormatted = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const appointmentsTrend = useMemo(() => buildCountTrend(mine.map((a) => a.date), range), [mine, range]);
+  const appointmentStatusBar = useMemo(
+    () => (["Pending", "Confirmed", "In Progress", "Completed", "Cancelled"] as const).map((s) => ({ name: s, value: mine.filter((a) => a.status === s).length })),
+    [mine]
+  );
 
   return (
     <DoctorLayout>
@@ -84,6 +88,21 @@ function DoctorDashboard() {
                   <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)" }} />
                   <Line type="monotone" dataKey="value" stroke="var(--brand)" strokeWidth={2.5} dot={{ r: 4 }} />
                 </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 shadow-[var(--shadow-card)]">
+            <CardHeader><CardTitle className="text-base">Appointments Overview</CardTitle></CardHeader>
+            <CardContent className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={appointmentStatusBar}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="name" fontSize={12} stroke="var(--muted-foreground)" tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} stroke="var(--muted-foreground)" tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)" }} />
+                  <Bar dataKey="value" name="Appointments" fill="var(--brand)" radius={[6, 6, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>

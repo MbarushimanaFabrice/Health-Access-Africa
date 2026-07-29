@@ -70,10 +70,9 @@ interface AppState {
   // shared appointment actions
   updateAppointmentStatus: (id: string, status: AppointmentStatus) => Promise<void>;
   // consultations
-  updateConsultationNotes: (id: string, notes: string) => Promise<void>;
-  startConsultation: (appointmentId: string) => Promise<void>;
+  /** Upserts the appointment's consultation. share=false keeps it a private draft. */
+  saveConsultation: (appointmentId: string, notes: string, share: boolean) => Promise<void>;
   startVideoCall: (appointmentId: string) => Promise<void>;
-  completeConsultation: (id: string) => Promise<void>;
   // notifications
   markNotificationRead: (id: string) => Promise<void>;
   markAllNotificationsRead: (audience?: Notification["audience"]) => Promise<void>;
@@ -171,10 +170,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const doctors = useMemo<Doctor[]>(() => rawDoctors.map(toDoctor), [rawDoctors]);
 
-  const patients = useMemo<Patient[]>(
-    () => rawUsers.filter((u) => u.role === "patient").map(toPatient),
-    [rawUsers]
-  );
+  const patients = useMemo<Patient[]>(() => {
+    // Only admins can list every user, so a doctor's patients are derived from
+    // the patient records embedded in their own appointments.
+    if (role === "admin") return rawUsers.filter((u) => u.role === "patient").map(toPatient);
+
+    const byId = new Map<string, Patient>();
+    (appointmentsQuery.data ?? []).forEach((a) => {
+      if (!a.patient || byId.has(a.patient.id)) return;
+      byId.set(
+        a.patient.id,
+        toPatient({
+          isActive: true,
+          createdAt: "",
+          fullName: "",
+          email: "",
+          phone: null,
+          district: null,
+          ...a.patient,
+          role: "patient",
+        })
+      );
+    });
+    return Array.from(byId.values());
+  }, [role, rawUsers, appointmentsQuery.data]);
 
   const users = useMemo<(Admin | Doctor | Patient)[]>(
     () => [...admins, ...doctors, ...patients],
@@ -237,7 +256,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         appointmentTime: input.time,
         reason: input.reason,
       }),
-    onSuccess: invalidateAppointments,
+    onSuccess: () => {
+      invalidateAppointments();
+      queryClient.invalidateQueries({ queryKey: ["availability"] });
+    },
   });
 
   const updateAppointmentStatusMutation = useMutation({
@@ -254,35 +276,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       invalidateAppointments();
       invalidateConsultations();
+      queryClient.invalidateQueries({ queryKey: ["availability"] });
     },
   });
 
-  const updateConsultationNotesMutation = useMutation({
-    mutationFn: async ({ id, notes }: { id: string; notes: string }) =>
-      consultationsApi.updateConsultation(id, { notes }),
-    onSuccess: invalidateConsultations,
-  });
-
-  const startConsultationMutation = useMutation({
-    mutationFn: async (appointmentId: string) =>
-      consultationsApi.createConsultation({ appointmentId, status: "in_progress" }),
+  const saveConsultationMutation = useMutation({
+    mutationFn: async ({
+      appointmentId,
+      notes,
+      share,
+    }: { appointmentId: string; notes: string; share: boolean }) =>
+      consultationsApi.saveConsultationForAppointment(appointmentId, { notes, share }),
     onSuccess: () => {
       invalidateAppointments();
       invalidateConsultations();
+      invalidateNotifications();
     },
   });
 
   const startVideoCallMutation = useMutation({
     mutationFn: async (appointmentId: string) =>
       consultationsApi.getOrCreateVideoRoom(appointmentId),
-    onSuccess: () => {
-      invalidateAppointments();
-      invalidateConsultations();
-    },
-  });
-
-  const completeConsultationMutation = useMutation({
-    mutationFn: async (id: string) => consultationsApi.updateConsultation(id, { status: "completed" }),
     onSuccess: () => {
       invalidateAppointments();
       invalidateConsultations();
@@ -391,16 +405,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     updateAppointmentStatus: (id, status) =>
       updateAppointmentStatusMutation.mutateAsync({ id, status }).then(() => undefined),
 
-    updateConsultationNotes: (id, notes) =>
-      updateConsultationNotesMutation.mutateAsync({ id, notes }).then(() => undefined),
-
-    startConsultation: (appointmentId) =>
-      startConsultationMutation.mutateAsync(appointmentId).then(() => undefined),
+    saveConsultation: (appointmentId, notes, share) =>
+      saveConsultationMutation.mutateAsync({ appointmentId, notes, share }).then(() => undefined),
 
     startVideoCall: (appointmentId) =>
       startVideoCallMutation.mutateAsync(appointmentId).then(() => undefined),
-
-    completeConsultation: (id) => completeConsultationMutation.mutateAsync(id).then(() => undefined),
 
     markNotificationRead: (id) => markNotificationReadMutation.mutateAsync(id).then(() => undefined),
 

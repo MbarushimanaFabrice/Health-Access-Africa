@@ -48,8 +48,9 @@ model User {
 
   doctorProfile       DoctorProfile?
   patientProfile      PatientProfile?
-  patientAppointments Appointment[]  @relation("PatientAppointments")
-  doctorAppointments  Appointment[]  @relation("DoctorAppointments")
+  patientAppointments Appointment[]      @relation("PatientAppointments")
+  doctorAppointments  Appointment[]      @relation("DoctorAppointments")
+  availabilitySlots   AvailabilitySlot[]
   notifications       Notification[]
   healthInfoPosts     HealthInfo[]
 
@@ -92,10 +93,26 @@ model Appointment {
   reason          String?
   status          AppointmentStatus @default(pending)
   consultation    Consultation?
+  slot            AvailabilitySlot?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
   @@map("appointments")
+}
+
+model AvailabilitySlot {
+  id            String       @id @default(uuid())
+  doctorId      String
+  doctor        User         @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  date          DateTime     @db.Date
+  startTime     String       @map("start_time")
+  appointmentId String?      @unique @map("appointment_id")
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+
+  @@unique([doctorId, date, startTime])
+  @@index([doctorId, date])
+  @@map("availability_slots")
 }
 
 model Consultation {
@@ -105,6 +122,7 @@ model Consultation {
   notes         String?
   status        ConsultationStatus @default(not_started)
   videoRoomId   String?            @map("video_room_id")
+  sharedAt      DateTime?          @map("shared_at")
   startedAt     DateTime?
   endedAt       DateTime?
   createdAt     DateTime           @default(now())

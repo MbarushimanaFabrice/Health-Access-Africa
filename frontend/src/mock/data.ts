@@ -62,6 +62,8 @@ export interface Consultation {
   status: ConsultationStatus;
   notes: string;
   videoRoomId?: string | null;
+  /** False while the doctor's notes are still a private draft. */
+  shared: boolean;
 }
 
 export interface Notification {
@@ -165,12 +167,12 @@ export const appointments: Appointment[] = [
 // -------------------- CONSULTATIONS --------------------
 
 export const consultations: Consultation[] = [
-  { id: "c1", appointmentId: "a5", patientId: "u-pat-3", doctorId: "u-doc-1", date: iso(-3), status: "Completed", notes: "Rest and hydration recommended. Prescribed paracetamol." },
-  { id: "c2", appointmentId: "a6", patientId: "u-pat-1", doctorId: "u-doc-2", date: iso(-10), status: "Completed", notes: "Inhaler prescription renewed. Continue current plan." },
-  { id: "c3", appointmentId: "a7", patientId: "u-pat-4", doctorId: "u-doc-3", date: iso(-20), status: "Completed", notes: "BP slightly elevated. Reduce salt intake and monitor weekly." },
-  { id: "c4", appointmentId: "a9", patientId: "u-pat-8", doctorId: "u-doc-6", date: iso(-30), status: "Completed", notes: "All vitals within normal ranges." },
-  { id: "c5", appointmentId: "a13", patientId: "u-pat-10", doctorId: "u-doc-6", date: iso(-1), status: "Completed", notes: "Common cold. Rest and fluids advised." },
-  { id: "c6", appointmentId: "a15", patientId: "u-pat-2", doctorId: "u-doc-2", date: iso(0), status: "In Progress", notes: "" },
+  { id: "c1", appointmentId: "a5", patientId: "u-pat-3", doctorId: "u-doc-1", date: iso(-3), status: "Completed", notes: "Rest and hydration recommended. Prescribed paracetamol.", shared: true },
+  { id: "c2", appointmentId: "a6", patientId: "u-pat-1", doctorId: "u-doc-2", date: iso(-10), status: "Completed", notes: "Inhaler prescription renewed. Continue current plan.", shared: true },
+  { id: "c3", appointmentId: "a7", patientId: "u-pat-4", doctorId: "u-doc-3", date: iso(-20), status: "Completed", notes: "BP slightly elevated. Reduce salt intake and monitor weekly.", shared: true },
+  { id: "c4", appointmentId: "a9", patientId: "u-pat-8", doctorId: "u-doc-6", date: iso(-30), status: "Completed", notes: "All vitals within normal ranges.", shared: true },
+  { id: "c5", appointmentId: "a13", patientId: "u-pat-10", doctorId: "u-doc-6", date: iso(-1), status: "Completed", notes: "Common cold. Rest and fluids advised.", shared: true },
+  { id: "c6", appointmentId: "a15", patientId: "u-pat-2", doctorId: "u-doc-2", date: iso(0), status: "In Progress", notes: "", shared: false },
 ];
 
 // -------------------- NOTIFICATIONS --------------------
@@ -208,20 +210,6 @@ export const articles: Article[] = [
 ];
 
 // -------------------- CHART DATA --------------------
-
-export const appointmentsTrend = {
-  Week: [
-    { name: "Mon", value: 3 }, { name: "Tue", value: 5 }, { name: "Wed", value: 4 },
-    { name: "Thu", value: 6 }, { name: "Fri", value: 5 }, { name: "Sat", value: 2 }, { name: "Sun", value: 1 },
-  ],
-  Month: [
-    { name: "W1", value: 12 }, { name: "W2", value: 18 }, { name: "W3", value: 15 }, { name: "W4", value: 22 },
-  ],
-  Year: [
-    { name: "Jan", value: 40 }, { name: "Feb", value: 55 }, { name: "Mar", value: 42 },
-    { name: "Apr", value: 65 }, { name: "May", value: 58 }, { name: "Jun", value: 72 }, { name: "Jul", value: 68 },
-  ],
-};
 
 export const userGrowthTrend = {
   Week: [

@@ -99,6 +99,63 @@ export async function updateConsultationController(req: Request, res: Response):
 
 /**
  * @swagger
+ * /api/consultations/appointment/{appointmentId}:
+ *   put:
+ *     tags: [Consultations]
+ *     summary: Save consultation notes for an appointment as a draft, or send them to the patient (Doctor only)
+ *     description: >
+ *       Creates the consultation if none exists yet. With share=false the notes
+ *       stay a private draft the patient cannot see. With share=true the
+ *       consultation is completed, the notes become visible to the patient and
+ *       the patient is notified once.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appointmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               notes:
+ *                 type: string
+ *                 example: "Patient presents with mild fever. Prescribed paracetamol."
+ *               share:
+ *                 type: boolean
+ *                 default: false
+ *     responses:
+ *       200:
+ *         description: Consultation saved
+ *       400:
+ *         description: Not authorized, appointment not found, or sharing empty notes
+ */
+export async function saveConsultationController(req: Request, res: Response): Promise<void> {
+  try {
+    const consultation = await consultationsService.saveConsultationForAppointment(
+      req.params.appointmentId,
+      req.user!.userId,
+      req.body
+    );
+    successResponse(
+      res,
+      consultation,
+      200,
+      req.body.share ? 'Consultation sent to patient' : 'Draft saved'
+    );
+  } catch (error) {
+    errorResponse(res, (error as Error).message, 400);
+  }
+}
+
+/**
+ * @swagger
  * /api/consultations/me:
  *   get:
  *     tags: [Consultations]

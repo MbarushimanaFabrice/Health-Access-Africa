@@ -1,6 +1,106 @@
 import { randomBytes } from 'crypto';
 import { prisma } from '../../config/db';
-import { CreateConsultationInput, UpdateConsultationInput } from './consultations.schema';
+import {
+  CreateConsultationInput,
+  SaveConsultationInput,
+  UpdateConsultationInput,
+} from './consultations.schema';
+
+const fullConsultationInclude = {
+  appointment: {
+    include: {
+      patient: { select: { id: true, fullName: true, email: true, district: true } },
+      doctor: { select: { id: true, fullName: true, doctorProfile: true } },
+    },
+  },
+};
+
+/**
+ * A doctor's notes stay private until they explicitly send them, so strip the
+ * body of any unshared draft before it reaches a patient.
+ */
+function redactUnsharedNotes<T extends { notes: string | null; sharedAt: Date | null }>(
+  consultation: T
+): T {
+  return consultation.sharedAt ? consultation : { ...consultation, notes: null };
+}
+
+/**
+ * Creates or updates the consultation attached to an appointment. Doctors reach
+ * this straight from the appointment, before a consultation row necessarily
+ * exists, so it upserts rather than requiring a separate create call.
+ */
+export async function saveConsultationForAppointment(
+  appointmentId: string,
+  doctorId: string,
+  input: SaveConsultationInput
+) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    include: { consultation: true, doctor: { select: { fullName: true } } },
+  });
+
+  if (!appointment) {
+    throw new Error('Appointment not found');
+  }
+
+  if (appointment.doctorId !== doctorId) {
+    throw new Error('You are not authorized to write notes for this appointment');
+  }
+
+  if (input.share && !input.notes?.trim()) {
+    throw new Error('Add some notes before sending them to the patient');
+  }
+
+  // Sending is one-way: re-sending an already-shared consultation updates the
+  // notes but does not re-notify the patient.
+  const alreadyShared = Boolean(appointment.consultation?.sharedAt);
+  const now = new Date();
+
+  const consultation = await prisma.consultation.upsert({
+    where: { appointmentId },
+    create: {
+      appointmentId,
+      notes: input.notes,
+      status: input.share ? 'completed' : 'not_started',
+      sharedAt: input.share ? now : null,
+      startedAt: now,
+      endedAt: input.share ? now : null,
+    },
+    update: {
+      notes: input.notes,
+      ...(input.share
+        ? {
+            status: 'completed' as const,
+            sharedAt: appointment.consultation?.sharedAt ?? now,
+            endedAt: appointment.consultation?.endedAt ?? now,
+          }
+        : {}),
+    },
+    include: fullConsultationInclude,
+  });
+
+  if (input.share) {
+    if (appointment.status !== 'completed') {
+      await prisma.appointment.update({
+        where: { id: appointmentId },
+        data: { status: 'completed' },
+      });
+    }
+
+    if (!alreadyShared) {
+      await prisma.notification.create({
+        data: {
+          userId: appointment.patientId,
+          message: `Dr. ${appointment.doctor.fullName} has shared consultation notes from your appointment on ${appointment.appointmentDate.toISOString().slice(0, 10)}. View them under My Consultations.`,
+          type: 'consultation_shared',
+        },
+      });
+    }
+  }
+
+  return consultation;
+}
 
 export async function createConsultation(doctorId: string, input: CreateConsultationInput) {
   // Verify appointment exists and belongs to this doctor
@@ -90,7 +190,7 @@ export async function updateConsultation(
         await prisma.notification.create({
           data: {
             userId: patient.id,
-            message: `Your consultation has been completed. Notes from your doctor are now available.`,
+            message: `Your consultation has been completed.`,
             type: 'appointment_completed',
           },
         });
@@ -118,7 +218,7 @@ export async function getMyConsultations(userId: string, role: string) {
       ? { appointment: { patientId: userId } }
       : { appointment: { doctorId: userId } };
 
-  return prisma.consultation.findMany({
+  const consultations = await prisma.consultation.findMany({
     where,
     include: {
       appointment: {
@@ -130,6 +230,13 @@ export async function getMyConsultations(userId: string, role: string) {
     },
     orderBy: { createdAt: 'desc' },
   });
+
+  // Patients never see a draft; doctors see everything they wrote.
+  if (role === 'patient') {
+    return consultations.filter((c) => c.sharedAt).map(redactUnsharedNotes);
+  }
+
+  return consultations;
 }
 
 export async function getConsultationByAppointment(
@@ -171,7 +278,7 @@ export async function getConsultationByAppointment(
     throw new Error('No consultation found for this appointment');
   }
 
-  return consultation;
+  return role === 'patient' ? redactUnsharedNotes(consultation) : consultation;
 }
 
 /**

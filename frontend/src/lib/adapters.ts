@@ -1,4 +1,13 @@
-import { formatDistanceToNow, format, startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
+import {
+  formatDistanceToNow,
+  format,
+  addDays,
+  addMonths,
+  endOfMonth,
+  startOfMonth,
+  startOfWeek,
+  startOfYear,
+} from "date-fns";
 import type {
   Admin,
   Appointment,
@@ -130,6 +139,7 @@ export function toConsultation(c: ApiConsultation): Consultation {
     status: CONSULTATION_STATUS_MAP[c.status],
     notes: c.notes ?? "",
     videoRoomId: c.videoRoomId ?? null,
+    shared: Boolean(c.sharedAt),
   };
 }
 
@@ -139,6 +149,7 @@ const NOTIFICATION_TYPE_MAP: Record<string, NotificationType> = {
   appointment_cancelled: "Appointments",
   appointment_completed: "Appointments",
   video_call_started: "Appointments",
+  consultation_shared: "Appointments",
   reminder: "Reminders",
   health_info: "Health Info",
   user: "Users",
@@ -151,6 +162,7 @@ const NOTIFICATION_TITLE_MAP: Record<string, string> = {
   appointment_cancelled: "Appointment Cancelled",
   appointment_completed: "Appointment Completed",
   video_call_started: "Video Call Started",
+  consultation_shared: "Consultation Notes Shared",
   reminder: "Reminder",
   health_info: "Health Info Update",
   user: "Account Update",
@@ -196,28 +208,41 @@ export type TrendRange = "Week" | "Month" | "Year";
 /** Buckets a list of ISO date strings ("YYYY-MM-DD") into { name, value } points for the given range. */
 export function buildCountTrend(dates: string[], range: TrendRange): { name: string; value: number }[] {
   const now = new Date();
+  const countBetween = (start: Date, end: Date) => {
+    const from = format(start, "yyyy-MM-dd");
+    const to = format(end, "yyyy-MM-dd");
+    return dates.filter((d) => d >= from && d <= to).length;
+  };
 
+  // Windows are calendar-aligned rather than trailing, so days later in the
+  // current period still get a bucket — appointments are commonly booked ahead.
   if (range === "Week") {
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => {
-      const day = startOfDay(subDays(now, 6 - i));
-      const key = format(day, "yyyy-MM-dd");
-      return { name: format(day, "EEE"), value: dates.filter((d) => d.startsWith(key)).length };
+      const day = addDays(weekStart, i);
+      return { name: format(day, "EEE"), value: countBetween(day, day) };
     });
   }
 
   if (range === "Month") {
-    return Array.from({ length: 4 }, (_, i) => {
-      const weekStart = startOfDay(subDays(now, (3 - i) * 7 + 6));
-      const weekEnd = startOfDay(subDays(now, (3 - i) * 7 - 1));
-      const count = dates.filter((d) => d >= format(weekStart, "yyyy-MM-dd") && d <= format(weekEnd, "yyyy-MM-dd")).length;
-      return { name: `W${i + 1}`, value: count };
-    });
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+    const buckets: { name: string; value: number }[] = [];
+    let cursor = startOfWeek(monthStart, { weekStartsOn: 1 });
+    while (cursor <= monthEnd) {
+      const weekEnd = addDays(cursor, 6);
+      const from = cursor < monthStart ? monthStart : cursor;
+      const to = weekEnd > monthEnd ? monthEnd : weekEnd;
+      buckets.push({ name: `W${buckets.length + 1}`, value: countBetween(from, to) });
+      cursor = addDays(cursor, 7);
+    }
+    return buckets;
   }
 
-  return Array.from({ length: 7 }, (_, i) => {
-    const month = startOfMonth(subMonths(now, 6 - i));
-    const key = format(month, "yyyy-MM");
-    return { name: format(month, "MMM"), value: dates.filter((d) => d.startsWith(key)).length };
+  const yearStart = startOfYear(now);
+  return Array.from({ length: 12 }, (_, i) => {
+    const month = addMonths(yearStart, i);
+    return { name: format(month, "MMM"), value: countBetween(month, endOfMonth(month)) };
   });
 }
 

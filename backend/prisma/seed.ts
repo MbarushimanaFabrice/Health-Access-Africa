@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database with Rwanda-based data...\n');
+  console.log('Seeding database with Rwanda-based data...\n');
 
   // Clean existing data
   await prisma.notification.deleteMany();
@@ -504,23 +504,23 @@ Visit your nearest health center for free testing, counseling, and treatment ser
   }
 
   // ─── PRINT CREDENTIALS ────────────────────────────────────────────────────
-  console.log('\n✅ Database seeded successfully!\n');
+  console.log('\nDatabase seeded successfully!\n');
   console.log('═══════════════════════════════════════════════════════════');
   console.log('                   SEEDED LOGIN CREDENTIALS                ');
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('\n🔑 ALL ACCOUNTS USE PASSWORD: Password123!\n');
+  console.log('\nALL ACCOUNTS USE PASSWORD: Password123!\n');
 
-  console.log('👑 ADMIN:');
+  console.log('ADMIN:');
   console.log(`   Email: ${admin.email}`);
   console.log(`   Name:  ${admin.fullName}`);
 
-  console.log('\n🩺 DOCTORS:');
+  console.log('\nDOCTORS:');
   doctors.forEach((d) => {
     console.log(`   Email: ${d.email}`);
     console.log(`   Name:  ${d.fullName}\n`);
   });
 
-  console.log('🧑‍⚕️ PATIENTS:');
+  console.log('PATIENTS:');
   patients.forEach((p) => {
     console.log(`   Email: ${p.email}`);
     console.log(`   Name:  ${p.fullName}\n`);
@@ -531,7 +531,7 @@ Visit your nearest health center for free testing, counseling, and treatment ser
 
 main()
   .catch((e) => {
-    console.error('❌ Seed error:', e);
+    console.error('Seed error:', e);
     process.exit(1);
   })
   .finally(async () => {

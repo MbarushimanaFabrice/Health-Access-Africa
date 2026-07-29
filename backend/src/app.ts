@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/error.middleware';
 import authRoutes from './modules/auth/auth.routes';
 import usersRoutes from './modules/users/users.routes';
 import appointmentsRoutes from './modules/appointments/appointments.routes';
+import availabilityRoutes from './modules/availability/availability.routes';
 import consultationsRoutes from './modules/consultations/consultations.routes';
 import patientsRoutes from './modules/patients/patients.routes';
 import healthInfoRoutes from './modules/health-info/health-info.routes';
@@ -45,7 +46,7 @@ setupSwagger(app);
 app.get('/health', (_req, res) => {
   res.json({
     success: true,
-    message: 'Health Access Africa API is running 🏥',
+    message: 'Health Access Africa API is running',
     timestamp: new Date().toISOString(),
     environment: env.NODE_ENV,
   });
@@ -59,6 +60,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/availability', availabilityRoutes);
 app.use('/api/consultations', consultationsRoutes);
 app.use('/api/patients', patientsRoutes);
 app.use('/api/health-info', healthInfoRoutes);

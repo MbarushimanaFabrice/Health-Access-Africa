@@ -2,7 +2,8 @@ import axios, { type AxiosInstance } from "axios";
 
 export const TOKEN_STORAGE_KEY = "haa.token";
 
-const baseURL = "https://healthcare.iduka.store/api";
+// const baseURL = "https://healthcare.iduka.store/api";
+ const baseURL = "http://localhost:4441/api"
 
 export const apiClient: AxiosInstance = axios.create({ baseURL });
 
