@@ -47,6 +47,7 @@ export interface ApiConsultationSummary {
   notes: string | null;
   status: "not_started" | "in_progress" | "completed";
   videoRoomId?: string | null;
+  sharedAt?: string | null;
   startedAt: string | null;
   endedAt: string | null;
 }
@@ -66,12 +67,34 @@ export interface ApiAppointment {
   consultation?: ApiConsultationSummary | null;
 }
 
+export interface ApiAvailabilitySlot {
+  id: string;
+  doctorId: string;
+  date: string;
+  startTime: string;
+  appointmentId: string | null;
+  createdAt: string;
+  appointment?: {
+    id: string;
+    status: ApiAppointment["status"];
+    reason: string | null;
+    patient: { id: string; fullName: string };
+  } | null;
+}
+
+export interface ApiCreateSlotsResult {
+  created: number;
+  skipped: number;
+  slots: ApiAvailabilitySlot[];
+}
+
 export interface ApiConsultation {
   id: string;
   appointmentId: string;
   notes: string | null;
   status: "not_started" | "in_progress" | "completed";
   videoRoomId?: string | null;
+  sharedAt?: string | null;
   startedAt: string | null;
   endedAt: string | null;
   appointment: ApiAppointment;

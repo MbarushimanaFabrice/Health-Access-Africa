@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createConsultationController,
   updateConsultationController,
+  saveConsultationController,
   getMyConsultationsController,
   getConsultationController,
   getOrCreateVideoRoomController,
@@ -10,7 +11,11 @@ import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/role.middleware';
 import { requirePasswordChange } from '../../middleware/requirePasswordChange.middleware';
 import { validate } from '../../middleware/validate.middleware';
-import { createConsultationSchema, updateConsultationSchema } from './consultations.schema';
+import {
+  createConsultationSchema,
+  saveConsultationSchema,
+  updateConsultationSchema,
+} from './consultations.schema';
 
 const router = Router();
 
@@ -21,6 +26,13 @@ router.post(
   authorize('doctor'),
   validate(createConsultationSchema),
   createConsultationController
+);
+
+router.put(
+  '/appointment/:appointmentId',
+  authorize('doctor'),
+  validate(saveConsultationSchema),
+  saveConsultationController
 );
 
 router.patch(

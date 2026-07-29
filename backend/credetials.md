@@ -1,20 +1,20 @@
 Environment variables loaded from .env
 Running seed command `ts-node prisma/seed.ts` ...
-🌱 Seeding database with Rwanda-based data...
+Seeding database with Rwanda-based data...
 
-✅ Database seeded successfully!
+Database seeded successfully!
 
 ═══════════════════════════════════════════════════════════
                    SEEDED LOGIN CREDENTIALS
 ═══════════════════════════════════════════════════════════
 
-🔑 ALL ACCOUNTS USE PASSWORD: Password123!
+ALL ACCOUNTS USE PASSWORD: Password123!
 
-👑 ADMIN:
+ADMIN:
    Email: admin@healthaccessafrica.rw
    Name:  Nkurunziza Alexis
 
-🩺 DOCTORS:
+DOCTORS:
    Email: dr.kagame@healthaccessafrica.rw
    Name:  Dr. Kagame Jean-Paul
 
@@ -30,7 +30,7 @@ Running seed command `ts-node prisma/seed.ts` ...
    Email: dr.nshimiyimana@healthaccessafrica.rw
    Name:  Dr. Nshimiyimana Théodore
 
-🧑‍⚕️ PATIENTS:
+PATIENTS:
    Email: uwase.aline@gmail.com
    Name:  Uwase Aline
 

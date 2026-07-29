@@ -10,7 +10,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  console.error('❌ Unhandled error:', err.message);
+  console.error('Unhandled error:', err.message);
 
   const statusCode = err.statusCode || 500;
   const message =

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { DoctorLayout } from "@/components/doctor-layout";
 import { PageHeader } from "@/components/role-layout";
@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/status-badge";
+import { ConsultationForm } from "@/components/consultation-form";
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
 import { type Appointment, type AppointmentStatus } from "@/mock/data";
-import { Eye, Video } from "lucide-react";
+import { Eye, FileText, Video } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/doctor/appointments")({
@@ -26,6 +27,7 @@ function DoctorAppointments() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("all");
   const [detail, setDetail] = useState<Appointment | null>(null);
+  const [showNotes, setShowNotes] = useState(false);
   const patientById = useMemo(() => Object.fromEntries(patients.map((p) => [p.id, p])), [patients]);
   const consultByAppt = useMemo(
     () => Object.fromEntries(consultations.map((c) => [c.appointmentId, c])),
@@ -40,6 +42,14 @@ function DoctorAppointments() {
   return (
     <DoctorLayout>
       <PageHeader title="Appointments" subtitle="Manage your incoming and scheduled appointments." />
+
+      <div className="mb-4">
+        <Button asChild variant="outline" size="sm">
+          <Link to="/doctor/appointments/consultations">
+            <FileText className="size-4" /> Manage consultations
+          </Link>
+        </Button>
+      </div>
 
       <Card className="border-border/60 shadow-[var(--shadow-card)]">
         <CardContent className="p-4 md:p-6">
@@ -83,7 +93,7 @@ function DoctorAppointments() {
                       <TableCell className="text-sm">{a.time}</TableCell>
                       <TableCell><StatusBadge status={a.status} /></TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => setDetail(a)}><Eye className="size-4" /> View</Button>
+                        <Button variant="ghost" size="sm" onClick={() => { setDetail(a); setShowNotes(false); }}><Eye className="size-4" /> View</Button>
                       </TableCell>
                     </TableRow>
                   );
@@ -99,8 +109,9 @@ function DoctorAppointments() {
           <DialogHeader><DialogTitle>Appointment</DialogTitle></DialogHeader>
           {detail && (() => {
             const p = patientById[detail.patientId];
+            const consultation = consultByAppt[detail.id];
             return (
-              <div className="space-y-3">
+              <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-1">
                 <div className="flex items-center gap-3">
                   <Avatar className="size-12"><AvatarImage src={p?.avatar} /><AvatarFallback>{p?.name?.[0]}</AvatarFallback></Avatar>
                   <div>
@@ -117,7 +128,14 @@ function DoctorAppointments() {
                   {statuses.map((s) => (
                     <Button key={s} size="sm" variant={detail.status === s ? "default" : "outline"}
                       className={detail.status === s ? "bg-brand text-brand-foreground hover:bg-brand/90" : ""}
-                      onClick={() => { updateAppointmentStatus(detail.id, s); setDetail({ ...detail, status: s }); toast(`Set to ${s}`); }}>
+                      onClick={() => {
+                        updateAppointmentStatus(detail.id, s);
+                        setDetail({ ...detail, status: s });
+                        toast(`Set to ${s}`);
+                        // Completing a visit is the moment the doctor writes up the
+                        // consultation, so surface the form without another click.
+                        if (s === "Completed") setShowNotes(true);
+                      }}>
                       {s}
                     </Button>
                   ))}
@@ -136,10 +154,24 @@ function DoctorAppointments() {
                       }}
                     >
                       <Video className="size-4" />
-                      {consultByAppt[detail.id]?.videoRoomId ? "Join Video Call" : "Start Video Call"}
+                      {consultation?.videoRoomId ? "Join Video Call" : "Start Video Call"}
                     </Button>
                   </div>
                 )}
+
+                <div className="border-t border-border/60 pt-3">
+                  {showNotes || consultation ? (
+                    <ConsultationForm
+                      key={detail.id}
+                      appointmentId={detail.id}
+                      consultation={consultation}
+                    />
+                  ) : (
+                    <Button variant="outline" className="w-full" onClick={() => setShowNotes(true)}>
+                      <FileText className="size-4" /> Add consultation notes
+                    </Button>
+                  )}
+                </div>
               </div>
             );
           })()}

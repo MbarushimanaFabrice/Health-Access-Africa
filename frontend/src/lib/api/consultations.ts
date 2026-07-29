@@ -1,27 +1,20 @@
 import { apiClient } from "../api-client";
 import type { ApiConsultation, ApiEnvelope } from "./types";
 
-export interface CreateConsultationInput {
-  appointmentId: string;
+export interface SaveConsultationInput {
   notes?: string;
-  status?: "not_started" | "in_progress" | "completed";
+  /** false keeps the notes a private draft; true sends them to the patient. */
+  share?: boolean;
 }
 
-export interface UpdateConsultationInput {
-  notes?: string;
-  status?: "not_started" | "in_progress" | "completed";
-}
-
-export async function createConsultation(input: CreateConsultationInput): Promise<ApiConsultation> {
-  const res = await apiClient.post<ApiEnvelope<ApiConsultation>>("/consultations", input);
-  return res.data.data!;
-}
-
-export async function updateConsultation(
-  id: string,
-  input: UpdateConsultationInput
+export async function saveConsultationForAppointment(
+  appointmentId: string,
+  input: SaveConsultationInput
 ): Promise<ApiConsultation> {
-  const res = await apiClient.patch<ApiEnvelope<ApiConsultation>>(`/consultations/${id}`, input);
+  const res = await apiClient.put<ApiEnvelope<ApiConsultation>>(
+    `/consultations/appointment/${appointmentId}`,
+    input
+  );
   return res.data.data!;
 }
 

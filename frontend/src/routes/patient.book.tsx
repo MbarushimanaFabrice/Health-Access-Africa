@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { PatientLayout } from "@/components/patient-layout";
 import { PageHeader } from "@/components/role-layout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
+import * as availabilityApi from "@/lib/api/availability";
 import { districts } from "@/mock/data";
 import { Search, MapPin, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -21,8 +24,6 @@ export const Route = createFileRoute("/patient/book")({
   component: BookPage,
   head: () => ({ meta: [{ title: "Book Appointment — Health Access Africa" }] }),
 });
-
-const timeSlots = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00"];
 
 function BookPage() {
   const { currentUser } = useAuth();
@@ -38,6 +39,29 @@ function BookPage() {
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
 
+  const slotsQuery = useQuery({
+    queryKey: ["availability", "doctor", doctorId],
+    queryFn: () => availabilityApi.getDoctorSlots(doctorId!),
+    enabled: Boolean(doctorId),
+  });
+
+  const timesByDate = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const slot of slotsQuery.data ?? []) {
+      const key = slot.date.slice(0, 10);
+      map.set(key, [...(map.get(key) ?? []), slot.startTime].sort());
+    }
+    return map;
+  }, [slotsQuery.data]);
+
+  const availableTimes = date ? (timesByDate.get(format(date, "yyyy-MM-dd")) ?? []) : [];
+
+  const selectDoctor = (id: string) => {
+    setDoctorId(id);
+    setDate(undefined);
+    setTime(null);
+  };
+
   const activeDoctors = useMemo(() => doctors.filter((d) => d.status === "Active"), [doctors]);
   const specialties = useMemo(() => Array.from(new Set(activeDoctors.map((d) => d.specialty))), [activeDoctors]);
 
@@ -51,11 +75,24 @@ function BookPage() {
   const selectedDoctor = doctors.find((d) => d.id === doctorId);
   const canNext = (step === 1 && !!doctorId) || (step === 2 && !!date && !!time) || (step === 3 && reason.trim().length > 0);
 
-  const submit = () => {
+  const submit = async () => {
     if (!selectedDoctor || !date || !time || !currentUser) return;
-    bookAppointment({ patientId: currentUser.id, doctorId: selectedDoctor.id, date: date.toISOString().slice(0, 10), time, reason: reason.trim() });
-    setConfirmed(true);
-    toast.success("Appointment booked");
+    try {
+      await bookAppointment({
+        patientId: currentUser.id,
+        doctorId: selectedDoctor.id,
+        date: format(date, "yyyy-MM-dd"),
+        time,
+        reason: reason.trim(),
+      });
+      setConfirmed(true);
+      toast.success("Appointment booked");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not book this appointment");
+      setStep(2);
+      setTime(null);
+      slotsQuery.refetch();
+    }
   };
 
   if (confirmed) {
@@ -117,7 +154,7 @@ function BookPage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {filtered.map((d) => (
-                  <button key={d.id} onClick={() => setDoctorId(d.id)}
+                  <button key={d.id} onClick={() => selectDoctor(d.id)}
                     className={cn("flex items-start gap-3 rounded-2xl border p-4 text-left transition",
                       doctorId === d.id ? "border-brand bg-brand-soft" : "border-border hover:border-brand/40 hover:bg-muted/40")}>
                     <Avatar className="size-12"><AvatarImage src={d.avatar} /><AvatarFallback>{d.name[0]}</AvatarFallback></Avatar>
@@ -135,26 +172,39 @@ function BookPage() {
           )}
 
           {step === 2 && (
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <div className="mb-2 text-sm font-medium">Select date</div>
-                <Calendar mode="single" selected={date} onSelect={setDate}
-                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-                  className="rounded-md border pointer-events-auto" />
+            slotsQuery.isLoading ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Loading availability…</div>
+            ) : timesByDate.size === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                {selectedDoctor?.name} has no open slots right now. Try another doctor.
               </div>
-              <div>
-                <div className="mb-2 text-sm font-medium">Select time</div>
-                <div className="grid grid-cols-3 gap-2">
-                  {timeSlots.map((t) => (
-                    <button key={t} onClick={() => setTime(t)}
-                      className={cn("rounded-lg border py-2 text-sm font-medium transition",
-                        time === t ? "border-brand bg-brand text-brand-foreground" : "border-border hover:bg-muted")}>
-                      {t}
-                    </button>
-                  ))}
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <div className="mb-2 text-sm font-medium">Select date</div>
+                  <Calendar mode="single" selected={date} onSelect={(d) => { setDate(d); setTime(null); }}
+                    disabled={(d) => !timesByDate.has(format(d, "yyyy-MM-dd"))}
+                    className="rounded-md border pointer-events-auto" />
+                  <p className="mt-2 text-xs text-muted-foreground">Only days this doctor is available are selectable.</p>
+                </div>
+                <div>
+                  <div className="mb-2 text-sm font-medium">Select time</div>
+                  {!date ? (
+                    <p className="text-sm text-muted-foreground">Pick a date to see available times.</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {availableTimes.map((t) => (
+                        <button key={t} onClick={() => setTime(t)}
+                          className={cn("rounded-lg border py-2 text-sm font-medium transition",
+                            time === t ? "border-brand bg-brand text-brand-foreground" : "border-border hover:bg-muted")}>
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )
           )}
 
           {step === 3 && (

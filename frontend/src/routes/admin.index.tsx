@@ -26,7 +26,7 @@ function StatCard({ icon: Icon, label, value, trend }: { icon: React.ComponentTy
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="grid size-11 place-items-center rounded-full bg-brand-soft text-brand"><Icon className="size-5" /></div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand"><TrendingUp className="size-3" />{trend}</span>
+          {/* <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand"><TrendingUp className="size-3" />{trend}</span> */}
         </div>
         <div className="mt-4 text-3xl font-bold tracking-tight">{value}</div>
         <div className="mt-1 text-sm text-muted-foreground">{label}</div>
