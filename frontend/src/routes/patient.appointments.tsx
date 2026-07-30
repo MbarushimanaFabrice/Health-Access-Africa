@@ -21,13 +21,9 @@ export const Route = createFileRoute("/patient/appointments")({
 
 function MyAppointments() {
   const { currentUser } = useAuth();
-  const { appointments, doctors, consultations, updateAppointmentStatus } = useAppState();
+  const { appointments, doctors, updateAppointmentStatus } = useAppState();
   const [filter, setFilter] = useState("all");
   const doctorById = useMemo(() => Object.fromEntries(doctors.map((d) => [d.id, d])), [doctors]);
-  const consultByAppt = useMemo(
-    () => Object.fromEntries(consultations.map((c) => [c.appointmentId, c])),
-    [consultations]
-  );
 
   const mine = appointments.filter((a) => a.patientId === currentUser!.id);
   const visible = filter === "all" ? mine : mine.filter((a) => a.status === filter);
@@ -53,6 +49,7 @@ function MyAppointments() {
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="Confirmed">Confirmed</SelectItem>
                 <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
                 <SelectItem value="Completed">Completed</SelectItem>
                 <SelectItem value="Cancelled">Cancelled</SelectItem>
               </SelectContent>
@@ -77,12 +74,12 @@ function MyAppointments() {
                 ) : visible.map((a) => {
                   const d = doctorById[a.doctorId];
                   const canCancel = a.status === "Pending" || a.status === "Confirmed";
-                  const consult = consultByAppt[a.id];
                   const callLive =
-                    Boolean(consult?.videoRoomId) &&
-                    consult?.status !== "Completed" &&
+                    Boolean(a.videoRoomId) &&
                     a.status !== "Completed" &&
                     a.status !== "Cancelled";
+                  // The doctor opens the room; until then there is nothing to join.
+                  const awaitingCall = !callLive && a.status === "Confirmed";
                   return (
                     <TableRow key={a.id}>
                       <TableCell>
@@ -100,7 +97,7 @@ function MyAppointments() {
                       <TableCell><StatusBadge status={a.status} /></TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {!callLive && !canCancel && (
+                          {!callLive && !awaitingCall && !canCancel && (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
                           {callLive && (
@@ -109,6 +106,11 @@ function MyAppointments() {
                                 <Video className="size-4" /> Join Call
                               </Link>
                             </Button>
+                          )}
+                          {awaitingCall && (
+                            <span className="text-xs text-muted-foreground">
+                              Waiting for doctor to start
+                            </span>
                           )}
                           {canCancel && (
                           <AlertDialog>

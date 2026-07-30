@@ -44,7 +44,8 @@ export interface ApiUser {
 export interface ApiConsultationSummary {
   id: string;
   appointmentId: string;
-  notes: string | null;
+  /** Absent on endpoints that must not leak a doctor's unshared draft. */
+  notes?: string | null;
   status: "not_started" | "in_progress" | "completed";
   videoRoomId?: string | null;
   sharedAt?: string | null;
