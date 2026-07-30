@@ -102,7 +102,19 @@ export async function getMyAppointments(userId: string, role: string) {
           doctorProfile: true,
         },
       },
-      consultation: true,
+      // Notes are omitted on purpose: a doctor's draft stays private until they
+      // send it, and patients read this same endpoint.
+      consultation: {
+        select: {
+          id: true,
+          appointmentId: true,
+          status: true,
+          videoRoomId: true,
+          sharedAt: true,
+          startedAt: true,
+          endedAt: true,
+        },
+      },
     },
     orderBy: [{ appointmentDate: 'desc' }, { appointmentTime: 'asc' }],
   });
