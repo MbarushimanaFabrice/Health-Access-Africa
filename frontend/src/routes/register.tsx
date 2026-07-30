@@ -74,8 +74,8 @@ function RegisterPage() {
       <aside className="relative hidden bg-sidebar text-sidebar-foreground lg:flex lg:flex-col lg:justify-between p-10 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://hmedicalcentre.com/wp-content/uploads/2023/05/Doctor-Consultation-2-1000x1000.png"
-            alt="Doctor consultation"
+            src="/auth-consultation.jpeg"
+            alt="Doctor reviewing health records with a patient"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-green-600/40" />
