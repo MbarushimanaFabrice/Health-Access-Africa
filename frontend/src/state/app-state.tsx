@@ -120,15 +120,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     queryFn: () =>
       role === "admin" ? appointmentsApi.getAllAppointments() : appointmentsApi.getMyAppointments(),
     enabled,
+    // Poll so a patient sees the status change and their "Join Call" button
+    // shortly after the doctor confirms and starts the video call.
+    refetchInterval: 15_000,
   });
 
   const consultationsQuery = useQuery({
     queryKey: KEYS.consultations,
     queryFn: () => consultationsApi.getMyConsultations(),
     enabled: enabled && (role === "patient" || role === "doctor"),
-    // Poll so a patient's "Join Call" button appears shortly after the doctor
-    // starts the video call.
-    refetchInterval: 15_000,
   });
 
   const notificationsQuery = useQuery({

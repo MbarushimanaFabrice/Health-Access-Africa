@@ -51,6 +51,8 @@ export interface Appointment {
   time: string;
   reason: string;
   status: AppointmentStatus;
+  /** Set once the doctor opens the call; both parties join through it. */
+  videoRoomId?: string | null;
 }
 
 export interface Consultation {

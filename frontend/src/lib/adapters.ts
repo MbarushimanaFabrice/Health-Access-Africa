@@ -120,6 +120,7 @@ export function toAppointment(a: ApiAppointment): Appointment {
     time: a.appointmentTime,
     reason: a.reason ?? "",
     status,
+    videoRoomId: a.consultation?.videoRoomId ?? null,
   };
 }
 
