@@ -11,10 +11,10 @@ for (const key of requiredEnvVars) {
 }
 
 export const env = {
-  PORT: parseInt(process.env.PORT || '4000', 10),
+  PORT: parseInt(process.env.PORT || '4441', 10),
   DATABASE_URL: process.env.DATABASE_URL!,
   JWT_SECRET: process.env.JWT_SECRET!,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:8080',
   NODE_ENV: process.env.NODE_ENV || 'development',
 };
