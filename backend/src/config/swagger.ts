@@ -9,7 +9,7 @@ const options: swaggerJsdoc.Options = {
       title: 'Health Access Africa API',
       version: '1.0.0',
       description:
-        'REST API for Health Access Africa — a digital health platform connecting patients in rural/underserved Rwanda with healthcare providers via telehealth consultations, appointment booking, and health information access.',
+        'REST API for Health Access Africa — a digital health platform connecting patients in rural/underserved Africa with healthcare providers via telehealth consultations, appointment booking, and health information access.',
       contact: {
         name: 'Fabrice Mbarushimana',
         email: 'admin@healthaccessafrica.rw',
